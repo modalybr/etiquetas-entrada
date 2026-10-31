@@ -80,16 +80,6 @@
   .label .foot .date, .label .foot .seam { font-size: 7em; font-weight: 800; line-height: 1; }
   .label .foot .r { font-size: 5em; font-weight: 800; background: #000; color: #fff; padding: .05em .45em; border-radius: .3em; }
 
-  /* ===== ETIQUETAS EM BRANCO (preencher à mão) ===== */
-  .modes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-  .label.blank { gap: 2.2em; }
-  .label.blank .btag { align-self: flex-start; font-size: 4.2em; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; background: #000; color: #fff; padding: .15em .7em; border-radius: .3em; line-height: 1.1; }
-  .label.blank .brow { flex: 1; min-height: 0; display: grid; gap: 3.5em; grid-template-columns: 1fr; }
-  .label.blank .brow.two { grid-template-columns: 1fr 1fr; }
-  .label.blank .bf { display: flex; flex-direction: column; justify-content: flex-start; border-bottom: .5em solid #000; min-height: 0; min-width: 0; }
-  .label.blank .bcap { font-size: 3.8em; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; line-height: 1.05; }
-  .label.blank .bcap small { font-size: .8em; font-weight: 400; text-transform: none; letter-spacing: 0; }
-
   /* ===== IMPRESSÃO ===== */
   #printArea { display: none; }
   @media print {
@@ -115,14 +105,8 @@
   <div class="grid">
     <div>
       <form id="form" class="card" autocomplete="off">
-        <div class="modes" id="modeChips">
-          <button type="button" class="chip on" data-mode="entrada">Entrada de mercadoria</button>
-          <button type="button" class="chip" data-mode="cortador">Cortador <small>em branco</small></button>
-          <button type="button" class="chip" data-mode="oficina">Oficina <small>em branco</small></button>
-        </div>
-        <h2 id="formTitle">Dados do pacote</h2>
+        <h2>Dados do pacote</h2>
 
-        <div id="entradaFields">
         <div class="row">
           <div class="field">
             <label for="corte">Nº do corte</label>
@@ -163,15 +147,10 @@
           <label for="date">Data chegada</label>
           <input id="date" type="date">
         </div>
-        </div>
         <div class="row">
-          <div class="field" id="copiesField">
+          <div class="field">
             <label for="copies">Cópias da etiqueta</label>
             <input id="copies" type="number" min="1" max="20" value="1">
-          </div>
-          <div class="field" id="copiesBlankField" hidden>
-            <label for="copiesBlank">Quantas etiquetas imprimir</label>
-            <input id="copiesBlank" type="number" min="1" max="200" value="10">
           </div>
           <div class="field">
             <label for="labelSize">Tamanho da etiqueta</label>
@@ -191,10 +170,10 @@
           <div class="field"><label for="ch">Altura (mm)</label><input id="ch" type="number" min="20" max="300" value="70"></div>
         </div>
         <div class="actions">
-          <button class="primary" type="submit" id="printBtn">🖨 Salvar e imprimir</button>
+          <button class="primary" type="submit">🖨 Salvar e imprimir</button>
           <button type="button" id="clear">Limpar</button>
         </div>
-        <p class="hint" id="formHint">Depois de imprimir, só o nº do corte é limpo. Modelo, cor, tamanho e costureiro ficam para o próximo pacote.</p>
+        <p class="hint">Depois de imprimir, só o nº do corte é limpo. Modelo, cor, tamanho e costureiro ficam para o próximo pacote.</p>
       </form>
     </div>
 
@@ -321,7 +300,6 @@ function rOf(modelo, size) {
 function toggle(set, v) { set.has(v) ? set.delete(v) : set.add(v); }
 $("form").addEventListener("click", ev => {
   const b = ev.target.closest(".chip"); if (!b) return;
-  if (b.dataset.mode) { applyMode(b.dataset.mode); return; }
   if (b.dataset.model) {
     if (sel.modelo !== b.dataset.model) { sel.modelo = b.dataset.model; sel.sizes.clear(); sel.colors.clear(); }
   } else if (b.dataset.size) {
@@ -370,43 +348,6 @@ function labelHTML(e) {
   </div>`;
 }
 
-// Etiquetas em branco: só os campos, para preencher à mão
-function blankHTML(kind) {
-  const [w, h] = labelDims();
-  const u = Math.min(w / 100, h / 70);
-  const f = (cap, hint) => `<div class="bf"><div class="bcap">${cap}${hint ? ` <small>${hint}</small>` : ""}</div></div>`;
-  let tag, rows;
-  if (kind === "cortador") {
-    tag = "Corte";
-    rows = `<div class="brow">${f("Código do corte")}</div>
-            <div class="brow">${f("Modelo do corte", "ex.: 1060 R1")}</div>
-            <div class="brow">${f("Qtd. de peças no pacote")}</div>`;
-  } else {
-    tag = "Oficina";
-    rows = `<div class="brow two">${f("Nº do corte")}${f("SKU")}</div>
-            <div class="brow">${f("Tamanho dos pedidos", "ex.: M · GG")}</div>
-            <div class="brow two">${f("Qtd. peças")}${f("Costureiro")}</div>`;
-  }
-  return `<div class="label blank" style="--w:${w};--h:${h};--u:${u.toFixed(3)}"><div class="btag">${tag}</div>${rows}</div>`;
-}
-
-let mode = "entrada";
-function applyMode(m) {
-  mode = m;
-  const blank = m !== "entrada";
-  $("entradaFields").hidden = blank;
-  $("copiesField").hidden = blank;
-  $("copiesBlankField").hidden = !blank;
-  $("clear").hidden = blank;
-  $("formTitle").textContent = blank ? (m === "cortador" ? "Etiqueta do cortador" : "Etiqueta da oficina") : "Dados do pacote";
-  $("printBtn").textContent = blank ? "🖨 Imprimir etiquetas em branco" : "🖨 Salvar e imprimir";
-  $("formHint").textContent = blank
-    ? "Etiqueta só com os campos, para escrever à mão. Não entra no histórico."
-    : "Depois de imprimir, só o nº do corte é limpo. Modelo, cor, tamanho e costureiro ficam para o próximo pacote.";
-  document.querySelectorAll("#modeChips .chip").forEach(c => c.classList.toggle("on", c.dataset.mode === m));
-  renderPreview();
-}
-
 function currentEntry() {
   return {
     corte: $("corte").value.trim(),
@@ -422,20 +363,18 @@ function currentEntry() {
 }
 
 function renderPreview() {
-  if (mode !== "entrada") { $("preview").innerHTML = blankHTML(mode); return; }
   const e = currentEntry();
   $("codPreview").textContent = codOf(e) || "—";
   if (!e.corte && !e.modelo) Object.assign(e, { corte: "153", modelo: "103", sizes: ["G", "EXG"], rs: ["R1", "R2"], colors: ["PR"], skus: ["103-PRG", "103-PREXG"], qty: "300", seamstress: "Alex" });
   $("preview").innerHTML = labelHTML(e);
 }
 
-function printHTML(html, copies) {
+function printLabels(entry, copies) {
   const [w, h] = labelDims();
   $("pageStyle").textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }`;
-  $("printArea").innerHTML = Array.from({ length: copies }, () => html).join("");
+  $("printArea").innerHTML = Array.from({ length: copies }, () => labelHTML(entry)).join("");
   setTimeout(() => window.print(), 50);
 }
-function printLabels(entry, copies) { printHTML(labelHTML(entry), copies); }
 
 // ---------- Histórico ----------
 function renderHistory() {
@@ -482,10 +421,6 @@ $("exportCsv").addEventListener("click", () => {
 // ---------- Formulário ----------
 $("form").addEventListener("submit", ev => {
   ev.preventDefault();
-  if (mode !== "entrada") {
-    printHTML(blankHTML(mode), Math.max(1, Math.min(200, +$("copiesBlank").value || 1)));
-    return;
-  }
   const e = currentEntry();
   const faltando = [];
   if (!e.corte) faltando.push("nº do corte");
