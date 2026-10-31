@@ -379,7 +379,8 @@ function blankHTML(kind) {
   if (kind === "cortador") {
     tag = "Corte";
     rows = `<div class="brow">${f("Código do corte")}</div>
-            <div class="brow">${f("Modelo do corte", "ex.: 1060 R1")}</div>`;
+            <div class="brow">${f("Modelo do corte", "ex.: 1060 R1")}</div>
+            <div class="brow">${f("Qtd. de peças no pacote")}</div>`;
   } else {
     tag = "Oficina";
     rows = `<div class="brow two">${f("Nº do corte")}${f("SKU")}</div>
